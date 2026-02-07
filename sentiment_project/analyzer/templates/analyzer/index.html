@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentiment Analysis</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background: linear-gradient(120deg, #f6f9fc, #e9efff);
+            min-height: 100vh;
+        }
+        .card {
+            border-radius: 15px;
+        }
+        textarea {
+            resize: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark bg-dark px-4">
+    <span class="navbar-brand fw-bold">Sentiment Analysis System</span>
+    <a href="/logout/" class="btn btn-danger">Logout</a>
+</nav>
+
+<div class="container mt-4">
+
+    <!-- ================= CHAT / INPUT SECTION ================= -->
+    <div class="card shadow p-4">
+        <h3 class="text-center mb-3">Analyze Your Text</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+            <textarea
+                name="text"
+                class="form-control"
+                rows="4"
+                placeholder="Enter your text here..."
+                required
+            ></textarea>
+
+            <button class="btn btn-primary mt-3 w-100">
+                Analyze Sentiment
+            </button>
+        </form>
+
+        {% if result %}
+        <div class="alert alert-info mt-4 text-center">
+            <h4 class="fw-bold">
+                {{ result.sentiment }} {{ result.emoji }}
+            </h4>
+            <p><b>Polarity:</b> {{ result.polarity }}</p>
+            <p><b>Subjectivity:</b> {{ result.subjectivity }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ================= POLARITY TREND ================= -->
+    <div class="card shadow p-4 mt-4">
+        <h4 class="text-center text-primary fw-bold">
+            Polarity Trend
+        </h4>
+        <p class="text-center text-muted">
+            Sentiment variation over time
+        </p>
+        <canvas id="sentimentChart" height="120"></canvas>
+    </div>
+
+    <!-- ================= SENTIMENT HISTORY ================= -->
+    <div class="card shadow p-4 mt-4 mb-5">
+        <h4 class="text-center">Sentiment History</h4>
+
+        <ul class="list-group mt-3">
+            {% for h in history %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ h.text|truncatechars:50 }}
+                <span class="badge 
+                    {% if h.sentiment == 'Positive' %}bg-success
+                    {% elif h.sentiment == 'Negative' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                    {{ h.sentiment }}
+                </span>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-center text-muted">
+                No history available
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</div>
+
+<!-- ================= CHART SCRIPT ================= -->
+<script>
+    const polarityData = {{ chart_data|safe }};
+    const labels = polarityData.map((_, index) => index + 1);
+
+    new Chart(document.getElementById("sentimentChart"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Polarity Score",
+                data: polarityData,
+                borderWidth: 3,
+                tension: 0.4
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    min: -1,
+                    max: 1
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
